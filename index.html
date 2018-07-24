@@ -1,3 +1,168 @@
+<!DOCTYPE html>
 <html>
-</h1>Hello</h1>
+<head>
+	<meta charset="utf-8">
+	<title>SCORE</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+	<link rel="icon" type="image/png" sizes="174x174" href="./style/favicon.png">
+
+	<script src="./build/Tone.js"></script>
+	<script src="./scripts/jquery.min.js"></script>
+	<script src="./scripts/draggabilly.js"></script>
+	<script src="https://tonejs.github.io/Logo/build/Logo.js"></script>
+	<script src="./scripts/StartAudioContext.js"></script>
+	<script src="./scripts/Interface.js"></script>
+	<script src="./scripts/nexusUI.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="./style/examples.css">
+
+	<script>
+        // jshint ignore: start
+	</script>
+
+</head>
+<body>
+<style type="text/css">
+	canvas {
+		margin-top: 3px;
+	}
+
+	canvas#fft {
+		margin-top: 2px;
+		width: 100%;
+		height: 90px;
+		border-radius: 10px;
+	}
+</style>
+<div id="Content">
+	<div id="Title">Sample</div>
+	<div>
+		<h2>Useful notes</h2>
+		<a href="https://tonejs.github.io/examples">Examples</a>
+		<a href="https://tonejs.github.io/docs/#Transport">Tone.Transport</a>
+		<a href="https://tonejs.github.io/docs/r12/Meter">Tone.Meter</a>
+		<a href="https://nexus-js.github.io/ui/api/#Sequencer">Nexus UI</a>
+	</div>
+
+
+	<canvas nx="matrix"></canvas>
+</div>
+<script>
+    var meter = new Tone.Meter();
+
+    //setup a polyphonic sampler
+    var clips = new Tone.Players({
+        "vocals1" : "./audio/sample/mixed/vocals_01.mp3",
+        "vocals2" : "./audio/sample/mixed/vocals_02.mp3",
+        "instruments1" : "./audio/sample/mixed/wurlitzer_01.mp3",
+        "instruments2" : "./audio/sample/mixed/wurlitzer_02.mp3",
+    }, {
+        "volume" : -5,
+        "fadeOut" : "8n",
+    }).connect(meter).toMaster();
+
+    //the notes
+    var clipNames = ["vocals1", "vocals2", "instruments1", "instruments2"];
+
+    var loop = new Tone.Sequence(function(time, col){
+        var column = matrix1.matrix[col];
+        for (var i = 0; i < 4; i++){
+            if (column[i] === 1){
+                //slightly randomized velocities
+                var vel = Math.random() * 0.5 + 0.5;
+                clips.get(clipNames[i]).start(time, 0, "32n", 0, vel);
+            }
+        }
+    }, [0, 1, 2, 3], "8n");
+
+    Tone.Transport.start();
+    Tone.Transport.bpm.value = 10;
+
+    // GUI //
+
+    nx.onload = function(){
+        nx.colorize("#f5871f");
+
+        matrix1.col = 4;
+        matrix1.init();
+        matrix1.resize($("#Content").width(), 250);
+        matrix1.draw();
+    }
+
+    Interface.Slider({
+        name : "BPM",
+        min : 1,
+        max : 20,
+        value : Tone.Transport.bpm.value,
+        drag : function(val){
+            Tone.Transport.bpm.value = val;
+        }
+    });
+
+    Interface.Button({
+        text : "Start",
+        activeText : "Stop",
+        type : "toggle",
+        key : 32, //spacebar
+        start : function(){
+            loop.start();
+        },
+        end : function(){
+            loop.stop();
+        },
+    });
+
+    Interface.Loader();
+
+    $(window).on("resize", function(){
+        matrix1.resize($("#Content").width(), 250);
+        matrix1.draw();
+    });
+
+    //drawing the FFT
+    var meterContext = $("<canvas>",{
+        "id" : "fft"
+    }).appendTo("#Content").get(0).getContext("2d");
+
+    var meterGraident;
+
+    function drawMeter(){
+        var level = meter.getLevel();
+        console.log('level: ' + level);
+        level = Tone.dbToGain(level); //scale it between 0 - 1
+        meterContext.clearRect(0, 0, canvasWidth, canvasHeight);
+        meterContext.fillStyle = meterGraident;
+        meterContext.fillRect(0, 0, canvasWidth, canvasHeight);
+        meterContext.fillStyle = "white";
+        meterContext.fillRect(canvasWidth * level, 0, canvasWidth, canvasHeight);
+    }
+
+    //size the canvase
+    var canvasWidth, canvasHeight;
+
+    function sizeCanvases(){
+        canvasWidth = $("#fft").width();
+        canvasHeight = $("#fft").height();
+        meterContext.canvas.width = canvasWidth;
+        meterContext.canvas.height = canvasHeight;
+        //make the gradient
+        meterGraident = meterContext.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+        meterGraident.addColorStop(0, "#BFFF02");
+        meterGraident.addColorStop(0.5, "#02FF24");
+        meterGraident.addColorStop(1, "#FF0202");
+    }
+
+    sizeCanvases();
+    $(window).resize(sizeCanvases);
+
+    function loopFrames(){
+        requestAnimationFrame(loopFrames);
+        //draw the meter level
+        drawMeter();
+    }
+    loopFrames();
+
+</script>
+</body>
 </html>
