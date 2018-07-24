@@ -4,25 +4,9 @@
 *.sublime-workspace
 *.sublime-project
 
-node_modules
+#node_modules
+#build/*
 
-TODO.txt
-wiki
+#Tone/version.js
+#Tone/index.js
 
-examples/scratch.html
-examples/deps/FileSaver.js
-examples/oscilloscope.html
-examples/graph.html
-
-test/performance
-test/mainTest.js
-test/Main.js
-test/supports.html
-test/coverage/
-
-build/*
-
-examples/scratch.js
-Tone/version.js
-Tone/index.js
-test/test.js
